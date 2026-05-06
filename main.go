@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Measurements struct {
@@ -29,6 +30,8 @@ func main() {
 		log.Panic("Unable to open ", input)
 	}
 	defer file.Close()
+
+	start := time.Now()
 
 	m := make(map[string]Measurements)
 
@@ -65,5 +68,8 @@ func main() {
 			measurements.max)
 
 	}
-	fmt.Printf("}")
+	fmt.Printf("}\n")
+
+	elapsed := time.Since(start)
+	fmt.Printf("Took %v \n", elapsed)
 }
