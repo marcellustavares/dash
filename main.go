@@ -19,9 +19,14 @@ type Measurements struct {
 }
 
 func main() {
-	file, err := os.Open("data/sample_data.txt")
+	if len(os.Args) != 2 {
+		log.Fatal("Usage: dash [measurements.txt]")
+	}
+
+	input := os.Args[1]
+	file, err := os.Open(input)
 	if err != nil {
-		log.Panic("Unable to open file")
+		log.Panic("Unable to open ", input)
 	}
 	defer file.Close()
 
