@@ -6,6 +6,7 @@ import (
 	"log"
 	"maps"
 	"os"
+	"runtime/pprof"
 	"slices"
 	"strconv"
 	"strings"
@@ -23,6 +24,15 @@ func main() {
 	if len(os.Args) != 2 {
 		log.Fatal("Usage: dash [measurements.txt]")
 	}
+
+	// cpu profiling
+	prof, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Panic("Unable to create cpu.prof file ", err)
+	}
+	defer prof.Close()
+	pprof.StartCPUProfile(prof)
+	defer pprof.StopCPUProfile()
 
 	input := os.Args[1]
 	file, err := os.Open(input)
