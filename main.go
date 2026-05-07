@@ -45,10 +45,13 @@ func main() {
 
 	m := make(map[string]Measurements)
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		pair := strings.Split(line, ";")
+	reader := bufio.NewReader(file)
+	for {
+		line, _ := reader.ReadString('\n')
+		if len(line) == 0 {
+			break
+		}
+		pair := strings.Split(line[:len(line)-1], ";")
 		station := pair[0]
 		temp, _ := strconv.ParseFloat(pair[1], 64)
 		measurements, found := m[station]

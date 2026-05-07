@@ -14,13 +14,14 @@
 
 ## Iterations
 
-| Iteration  | 100K      | 1M       | 10M     | 100M   | 1B      |
-| ---------  | ----------| -------- | ------- |------- |-------- |
-| 1st (naive)| 23.75ms   | 139.78ms | 1.20s   | 11.91s | 1m57.32 |
+| Iteration     | 100K      | 1M       | 10M     | 100M   | 1B      |
+| ---------     | ----------| -------- | ------- |------- |-------- |
+| 1st (Naive)   | 23.75ms   | 139.78ms | 1.20s   | 11.91s | 1m57.32 |
+| 2 (NewReader) | 22.67ms   | 156.48ms | 1.28s   | 12.64s | 2m7.24 |
 
 ## Cpu Profile
 
-#### Iteration 1
+#### Iteration 1 (Naive)
 ```
 flat  flat%   sum%        cum   cum%
 104.96s 85.26% 85.26%    104.96s 85.26%  syscall.rawsyscalln
@@ -33,4 +34,19 @@ flat  flat%   sum%        cum   cum%
 0.08s 0.065% 98.29%      1.75s  1.42%  runtime.stealWork
 0.05s 0.041% 98.33%    105.95s 86.07%  main.main
 0.03s 0.024% 98.36%      8.73s  7.09%  runtime.findRunnable
+```
+
+#### Iteration 2 (NewReader)
+```
+flat  flat%   sum%        cum   cum%
+112.88s 85.89% 85.89%    112.88s 85.89%  syscall.rawsyscalln
+5.29s  4.03% 89.92%      5.29s  4.03%  runtime.pthread_cond_wait
+4.48s  3.41% 93.33%      4.48s  3.41%  runtime.madvise
+2.76s  2.10% 95.43%      2.76s  2.10%  runtime.usleep
+1.71s  1.30% 96.73%      1.71s  1.30%  runtime.pthread_cond_timedwait_relative_np
+1.26s  0.96% 97.69%      1.26s  0.96%  runtime.pthread_kill
+0.12s 0.091% 97.78%      1.80s  1.37%  runtime.stealWork
+0.04s  0.03% 97.81%    114.08s 86.81%  main.main
+0.03s 0.023% 97.83%    112.97s 85.96%  bufio.(*Reader).ReadSlice
+0.03s 0.023% 97.85%    113.15s 86.10%  bufio.(*Reader).ReadString
 ```
