@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"log"
 	"maps"
@@ -59,7 +58,6 @@ func main() {
 		}
 
 		data := buffer[:n]
-		begin := 0
 
 		if len(leftover) > 0 {
 			tmp := make([]byte, len(leftover)+len(data))
@@ -69,19 +67,16 @@ func main() {
 			leftover = leftover[:0]
 		}
 
-		for {
-			semi := bytes.IndexByte(data[begin:], ';')
-			if semi < 0 {
-				break
+		begin := 0
+		semi := 0
+		for i := 0; i < len(data); i++ {
+			switch data[i] {
+			case ';':
+				semi = i
+			case '\n':
+				processRow(data[begin:semi], data[semi+1:i], m)
+				begin = i + 1
 			}
-			semi += begin
-			nl := bytes.IndexByte(data[semi:], '\n')
-			if nl < 0 {
-				break
-			}
-			nl += semi
-			processRow(data[begin:semi], data[semi+1:nl], m)
-			begin = nl + 1
 		}
 
 		// incomplete line
