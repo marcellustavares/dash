@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"log"
 	"maps"
@@ -9,7 +10,6 @@ import (
 	"runtime/pprof"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -45,25 +45,49 @@ func main() {
 
 	m := make(map[string]Measurements)
 
-	reader := bufio.NewReader(file)
+	bufferSize := 4 * 1024 * 1024
+	reader := bufio.NewReaderSize(file, bufferSize)
+
+	buffer := make([]byte, bufferSize)
+	var leftover []byte
+
 	for {
-		line, _ := reader.ReadString('\n')
-		if len(line) == 0 {
+		n, _ := reader.Read(buffer)
+
+		if n == 0 {
 			break
 		}
-		pair := strings.Split(line[:len(line)-1], ";")
-		station := pair[0]
-		temp, _ := strconv.ParseFloat(pair[1], 64)
-		measurements, found := m[station]
-		if !found {
-			measurements = Measurements{temp, temp, temp, 1}
-		} else {
-			measurements.min = min(temp, measurements.min)
-			measurements.max = max(temp, measurements.max)
-			measurements.sum += temp
-			measurements.count += 1
+
+		data := buffer[:n]
+		begin := 0
+
+		if len(leftover) > 0 {
+			tmp := make([]byte, len(leftover)+len(data))
+			copy(tmp, leftover)
+			copy(tmp[len(leftover):], data)
+			data = tmp
+			leftover = leftover[:0]
 		}
-		m[station] = measurements
+
+		for {
+			semi := bytes.IndexByte(data[begin:], ';')
+			if semi < 0 {
+				break
+			}
+			semi += begin
+			nl := bytes.IndexByte(data[semi:], '\n')
+			if nl < 0 {
+				break
+			}
+			nl += semi
+			processRow(data[begin:semi], data[semi+1:nl], m)
+			begin = nl + 1
+		}
+
+		// incomplete line
+		if begin < len(data) {
+			leftover = append(leftover[:0], data[begin:]...)
+		}
 	}
 	fmt.Printf("{")
 	for i, station := range slices.Sorted(maps.Keys(m)) {
@@ -85,4 +109,19 @@ func main() {
 
 	elapsed := time.Since(start)
 	fmt.Printf("Took %v \n", elapsed)
+}
+
+func processRow(stationBytes []byte, temperatureBytes []byte, m map[string]Measurements) {
+	station := string(stationBytes)
+	temp, _ := strconv.ParseFloat(string(temperatureBytes), 64)
+	measurements, found := m[station]
+	if !found {
+		measurements = Measurements{temp, temp, temp, 1}
+	} else {
+		measurements.min = min(temp, measurements.min)
+		measurements.max = max(temp, measurements.max)
+		measurements.sum += temp
+		measurements.count += 1
+	}
+	m[station] = measurements
 }

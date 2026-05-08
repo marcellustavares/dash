@@ -18,6 +18,7 @@
 | ---------     | ----------| -------- | ------- |------- |-------- |
 | 1st (Naive)   | 23.75ms   | 139.78ms | 1.20s   | 11.91s | 1m57.32 |
 | 2 (NewReader) | 22.67ms   | 156.48ms | 1.28s   | 12.64s | 2m7.24 |
+| 3 (NewReader + Custom Buffer) |  21.24ms   | 116.00ms | 853.21ms   | 8.22s      | 1m21.80s |
 
 ## Cpu Profile
 
@@ -49,4 +50,19 @@ flat  flat%   sum%        cum   cum%
 0.04s  0.03% 97.81%    114.08s 86.81%  main.main
 0.03s 0.023% 97.83%    112.97s 85.96%  bufio.(*Reader).ReadSlice
 0.03s 0.023% 97.85%    113.15s 86.10%  bufio.(*Reader).ReadString
+```
+
+#### Iteration 3 (NewReader + 4MB Buffer)
+```
+flat  flat%   sum%        cum   cum%
+7.74s 11.94% 11.94%      7.74s 11.94%  syscall.rawsyscalln
+7.37s 11.37% 23.30%      7.37s 11.37%  runtime.pthread_cond_signal
+6.15s  9.48% 32.79%      6.15s  9.48%  internal/bytealg.IndexByteString
+5.59s  8.62% 41.41%      5.59s  8.62%  internal/strconv.readFloat
+3.69s  5.69% 47.10%      6.86s 10.58%  runtime.mallocgcTiny
+2.97s  4.58% 51.68%      2.97s  4.58%  aeshashbody
+2.84s  4.38% 56.06%      4.93s  7.60%  runtime.mapassign_faststr
+2.64s  4.07% 60.13%      2.64s  4.07%  runtime.pthread_cond_wait
+2.43s  3.75% 63.88%      2.43s  3.75%  runtime.memmove
+2.14s  3.30% 67.18%      2.14s  3.30%  runtime.madvise
 ```
