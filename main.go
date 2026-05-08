@@ -41,7 +41,7 @@ func main() {
 
 	start := time.Now()
 
-	m := make(map[string]Measurements)
+	m := make(map[string]*Measurements)
 
 	bufferSize := 4 * 1024 * 1024
 	reader := bufio.NewReaderSize(file, bufferSize)
@@ -122,17 +122,17 @@ func parseFloat(bytes []byte) float64 {
 	return sign * temp
 }
 
-func processRow(stationBytes []byte, temperatureBytes []byte, m map[string]Measurements) {
+func processRow(stationBytes []byte, temperatureBytes []byte, m map[string]*Measurements) {
 	station := string(stationBytes)
 	temp := parseFloat(temperatureBytes)
 	measurements, found := m[station]
 	if !found {
-		measurements = Measurements{temp, temp, temp, 1}
+		measurements = &Measurements{temp, temp, temp, 1}
+		m[station] = measurements
 	} else {
 		measurements.min = min(temp, measurements.min)
 		measurements.max = max(temp, measurements.max)
 		measurements.sum += temp
 		measurements.count += 1
 	}
-	m[station] = measurements
 }
