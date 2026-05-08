@@ -20,6 +20,7 @@
 | 2 (NewReader) | 22.67ms   | 156.48ms | 1.28s   | 12.64s | 2m7.24 |
 | 3 (NewReader + Custom Buffer) |  21.24ms   | 116.00ms | 853.21ms   | 8.22s      | 1m21.80s |
 | 4 (rm IndexByteString) |  18.48ms   | 109.47ms | 821.32ms   | 7.94s      | 1m19.88s |
+| 5 (custom parseFloat) |  20.22ms   | 95.85ms |  622.61ms   | 6.01s      | 1m1.09s |
 
 ## Cpu Profile
 
@@ -81,4 +82,19 @@ flat  flat%   sum%        cum   cum%
 2.36s  3.75% 67.09%      2.36s  3.75%  aeshashbody
 2.06s  3.28% 70.36%      9.16s 14.57%  runtime.slicebytetostring
 1.99s  3.16% 73.53%      5.85s  9.30%  runtime.mapaccess2_faststr
+```
+
+#### Iteration 5 (custom parseFloat)
+```
+flat  flat%   sum%        cum   cum%
+10.70s 21.18% 21.18%     39.42s 78.01%  main.main
+6.74s 13.34% 34.51%      6.74s 13.34%  syscall.rawsyscalln
+6.36s 12.59% 47.10%      6.36s 12.59%  runtime.pthread_cond_signal
+3.17s  6.27% 53.37%      5.54s 10.96%  runtime.mapassign_faststr
+2.50s  4.95% 58.32%      3.83s  7.58%  runtime.mallocgcTiny
+2.19s  4.33% 62.66%      6.27s 12.41%  runtime.mapaccess2_faststr
+2.14s  4.24% 66.89%      2.14s  4.24%  runtime.madvise
+1.99s  3.94% 70.83%      1.99s  3.94%  aeshashbody
+1.75s  3.46% 74.29%      1.75s  3.46%  runtime.memequal
+1.73s  3.42% 77.72%      1.73s  3.42%  runtime.pthread_cond_wait
 ```

@@ -8,7 +8,6 @@ import (
 	"os"
 	"runtime/pprof"
 	"slices"
-	"strconv"
 	"time"
 )
 
@@ -106,9 +105,26 @@ func main() {
 	fmt.Printf("Took %v \n", elapsed)
 }
 
+func parseFloat(bytes []byte) float64 {
+	i := 0
+	sign := 1.
+	if bytes[i] == '-' {
+		sign = -1
+		i++
+	}
+	temp := 0.0
+	for ; bytes[i] != '.'; i++ {
+		temp = temp*10 + float64(bytes[i]-'0')
+	}
+	i++
+	decimal := float64(bytes[i] - '0')
+	temp += decimal / 10.0
+	return sign * temp
+}
+
 func processRow(stationBytes []byte, temperatureBytes []byte, m map[string]Measurements) {
 	station := string(stationBytes)
-	temp, _ := strconv.ParseFloat(string(temperatureBytes), 64)
+	temp := parseFloat(temperatureBytes)
 	measurements, found := m[station]
 	if !found {
 		measurements = Measurements{temp, temp, temp, 1}
