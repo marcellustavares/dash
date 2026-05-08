@@ -2,14 +2,21 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"log"
-	"maps"
 	"os"
 	"runtime/pprof"
-	"slices"
+	"sort"
 	"time"
 )
+
+const BUCKET_SIZE = 250000
+
+type Entry struct {
+	stationBytes []byte
+	measurements *Measurements
+}
 
 type Measurements struct {
 	min   float64
@@ -41,7 +48,8 @@ func main() {
 
 	start := time.Now()
 
-	m := make(map[string]*Measurements)
+	m := make([]Entry, BUCKET_SIZE)
+	totalStations := 0
 
 	bufferSize := 4 * 1024 * 1024
 	reader := bufio.NewReaderSize(file, bufferSize)
@@ -73,7 +81,7 @@ func main() {
 			case ';':
 				semi = i
 			case '\n':
-				processRow(data[begin:semi], data[semi+1:i], m)
+				processRow(data[begin:semi], data[semi+1:i], m, &totalStations)
 				begin = i + 1
 			}
 		}
@@ -83,9 +91,21 @@ func main() {
 			leftover = append(leftover[:0], data[begin:]...)
 		}
 	}
+
+	sortedEntries := make([]Entry, 0, totalStations)
+	for _, entry := range m {
+		if entry.stationBytes == nil {
+			continue
+		}
+		sortedEntries = append(sortedEntries, entry)
+	}
+	sort.Slice(sortedEntries, func(i, j int) bool {
+		return string(sortedEntries[i].stationBytes) < string(sortedEntries[j].stationBytes)
+	})
+
 	fmt.Printf("{")
-	for i, station := range slices.Sorted(maps.Keys(m)) {
-		measurements := m[station]
+	for i, entry := range sortedEntries {
+		measurements := entry.measurements
 
 		if i > 0 {
 			fmt.Printf(", ")
@@ -93,7 +113,7 @@ func main() {
 
 		fmt.Printf(
 			"%s=%.1f/%.1f/%.1f",
-			station,
+			entry.stationBytes,
 			measurements.min,
 			measurements.sum/float64(measurements.count),
 			measurements.max)
@@ -122,17 +142,40 @@ func parseFloat(bytes []byte) float64 {
 	return sign * temp
 }
 
-func processRow(stationBytes []byte, temperatureBytes []byte, m map[string]*Measurements) {
-	station := string(stationBytes)
+func processRow(stationBytes []byte, temperatureBytes []byte, m []Entry, totalStations *int) {
+	hashCode := HashBytes(stationBytes)
+	index := int(hashCode % BUCKET_SIZE)
 	temp := parseFloat(temperatureBytes)
-	measurements, found := m[station]
-	if !found {
-		measurements = &Measurements{temp, temp, temp, 1}
-		m[station] = measurements
-	} else {
-		measurements.min = min(temp, measurements.min)
-		measurements.max = max(temp, measurements.max)
-		measurements.sum += temp
-		measurements.count += 1
+	for {
+		entry := m[index]
+
+		if entry.stationBytes == nil {
+			stationCopy := make([]byte, len(stationBytes))
+			copy(stationCopy, stationBytes)
+
+			m[index] = Entry{
+				stationBytes: stationCopy,
+				measurements: &Measurements{temp, temp, temp, 1},
+			}
+			//fmt.Println(string(stationBytes))
+			(*totalStations)++
+			break
+		}
+
+		eq := bytes.Equal(entry.stationBytes, stationBytes)
+
+		if eq {
+			measurements := entry.measurements
+			measurements.min = min(temp, measurements.min)
+			measurements.max = max(temp, measurements.max)
+			measurements.sum += temp
+			measurements.count++
+			break
+		}
+
+		index++
+		if index >= BUCKET_SIZE {
+			index = 0
+		}
 	}
 }

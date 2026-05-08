@@ -22,6 +22,7 @@
 | 4 (rm IndexByteString) |  18.48ms   | 109.47ms | 821.32ms   | 7.94s      | 1m19.88s |
 | 5 (custom parseFloat) |  20.22ms   | 95.85ms |  622.61ms   | 6.01s      | 1m1.09s |
 | 6 (fewer allocs) |  13.30ms   | 72.70ms |  531.96ms   | 4.71s      | 46.71s |
+| 7 (no map) |  11.19ms   | 54.85ms |  343.34ms   | 3.11s      | 30.92s |
 
 ## Cpu Profile
 
@@ -113,4 +114,19 @@ flat  flat%   sum%        cum   cum%
 1410ms  3.74% 76.51%     5040ms 13.38%  runtime.mallocgc
 1090ms  2.89% 79.40%     1090ms  2.89%  aeshashbody
 910ms  2.42% 81.82%      910ms  2.42%  runtime.memequal
+```
+
+#### Iteration 7 (no map)
+```
+flat  flat%   sum%        cum   cum%
+8.64s 31.92% 31.92%      8.64s 31.92%  syscall.rawsyscalln
+8.52s 31.47% 63.39%     22.31s 82.42%  main.main
+1.80s  6.65% 70.04%      1.80s  6.65%  runtime.pthread_cond_signal
+1.78s  6.58% 76.62%      1.78s  6.58%  runtime.pthread_cond_wait
+1.63s  6.02% 82.64%      1.64s  6.06%  main.HashBytes (inline)
+1.28s  4.73% 87.37%      4.92s 18.18%  main.processRow
+1.20s  4.43% 91.80%      1.20s  4.43%  main.parseFloat (inline)
+0.80s  2.96% 94.75%      0.80s  2.96%  runtime.memequal
+0.37s  1.37% 96.12%      0.67s  2.48%  runtime.scanObject
+0.22s  0.81% 96.93%      0.22s  0.81%  runtime.usleep
 ```
