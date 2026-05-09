@@ -24,6 +24,7 @@
 | 6 (fewer allocs) |  13.30ms   | 72.70ms |  531.96ms   | 4.71s      | 46.71s |
 | 7 (no map) |  11.19ms   | 54.85ms |  343.34ms   | 3.11s      | 30.92s |
 | 8 (single pass) |  10.94ms   | 58.59ms |  337.77ms   | 3.10s      | 30.38s |
+| 9 (multithreading) |  20.77ms   | 39.37ms |  119.70ms   | 773.57ms      |  6.81s |
 
 ## Cpu Profile
 
@@ -146,4 +147,20 @@ flat  flat%   sum%        cum   cum%
 0.23s  0.84% 97.04%      0.32s  1.17%  runtime.typePointers.next
 0.23s  0.84% 97.88%      0.23s  0.84%  runtime.usleep
 0.14s  0.51% 98.39%      0.14s  0.51%  runtime.pthread_kill
+```
+
+#### Iteration 8 (multithreading)
+
+```
+flat  flat%   sum%        cum   cum%
+25.62s 66.42% 66.42%     35.37s 91.70%  main.processChunk
+5.60s 14.52% 80.94%      7.44s 19.29%  main.processRow
+1.78s  4.61% 85.56%      1.78s  4.61%  syscall.rawsyscalln
+1.74s  4.51% 90.07%      1.74s  4.51%  runtime.memequal
+0.68s  1.76% 91.83%      0.68s  1.76%  runtime.pthread_cond_wait
+0.61s  1.58% 93.41%      0.61s  1.58%  runtime.usleep
+0.46s  1.19% 94.61%      1.09s  2.83%  runtime.scanObject
+0.39s  1.01% 95.62%      0.58s  1.50%  runtime.typePointers.next
+0.30s  0.78% 96.40%      0.30s  0.78%  runtime.pthread_cond_signal
+0.30s  0.78% 97.17%      0.30s  0.78%  runtime.pthread_kill
 ```

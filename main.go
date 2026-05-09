@@ -5,9 +5,11 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"maps"
 	"os"
+	"runtime"
 	"runtime/pprof"
-	"sort"
+	"slices"
 	"time"
 )
 
@@ -39,26 +41,68 @@ func main() {
 	pprof.StartCPUProfile(prof)
 	defer pprof.StopCPUProfile()
 
+	start := time.Now()
+
 	input := os.Args[1]
+
+	workers := runtime.NumCPU()
+	chunks := Split(input, workers)
+	entriesChannel := make(chan []Entry, workers)
+
+	for _, chunk := range chunks {
+		go processChunk(input, chunk, entriesChannel)
+	}
+
+	totalStations := 0
+	m := make(map[string]*Measurements)
+	for i := 0; i < workers; i++ {
+		entries := <-entriesChannel
+		for _, entry := range entries {
+			station := string(entry.stationBytes) // TODO
+			measurements, found := m[station]
+
+			if !found {
+				m[station] = entry.measurements
+				totalStations++
+				continue
+			}
+
+			measurements.min = min(measurements.min, entry.measurements.min)
+			measurements.max = max(measurements.max, entry.measurements.max)
+			measurements.sum += entry.measurements.sum
+			measurements.count += entry.measurements.count
+		}
+	}
+
+	// sortedKeys := slices.Sorted(maps.Keys(m))
+	// sortedEntries := sortEntries(m)
+
+	printOutput(m)
+
+	elapsed := time.Since(start)
+	fmt.Printf("Took %v \n", elapsed)
+}
+
+func processChunk(input string, chunk Chunk, resultsChannel chan []Entry) {
 	file, err := os.Open(input)
 	if err != nil {
 		log.Panic("Unable to open ", input)
 	}
 	defer file.Close()
 
-	start := time.Now()
-
 	m := make([]Entry, BUCKET_SIZE)
 	totalStations := 0
 
 	bufferSize := 4 * 1024 * 1024
-	reader := bufio.NewReaderSize(file, bufferSize)
+
+	offset := chunk.offset
+	end := chunk.end
 
 	buffer := make([]byte, bufferSize)
 	var leftover []byte
 
-	for {
-		n, _ := reader.Read(buffer)
+	for offset < end {
+		n, _ := file.ReadAt(buffer, offset)
 
 		if n == 0 {
 			break
@@ -120,43 +164,19 @@ func main() {
 		if beginLine < len(data) {
 			leftover = append(leftover[:0], data[beginLine:]...)
 		}
+
+		offset += int64(n)
 	}
 
-	sortedEntries := make([]Entry, 0, totalStations)
+	// emit worker results
+	results := make([]Entry, 0, totalStations)
 	for _, entry := range m {
 		if entry.stationBytes == nil {
 			continue
 		}
-		sortedEntries = append(sortedEntries, entry)
+		results = append(results, entry)
 	}
-	sort.Slice(sortedEntries, func(i, j int) bool {
-		return string(sortedEntries[i].stationBytes) < string(sortedEntries[j].stationBytes)
-	})
-
-	writer := bufio.NewWriter(os.Stdout)
-
-	fmt.Fprint(writer, "{")
-	for i, entry := range sortedEntries {
-		measurements := entry.measurements
-
-		if i > 0 {
-			fmt.Fprint(writer, ", ")
-		}
-
-		fmt.Fprintf(
-			writer,
-			"%s=%.1f/%.1f/%.1f",
-			entry.stationBytes,
-			measurements.min,
-			measurements.sum/float64(measurements.count),
-			measurements.max)
-
-	}
-	fmt.Fprint(writer, "}\n")
-	writer.Flush()
-
-	elapsed := time.Since(start)
-	fmt.Printf("Took %v \n", elapsed)
+	resultsChannel <- results
 }
 
 func processRow(stationBytes []byte, temp float64, hashCode uint64, m []Entry, totalStations *int) {
@@ -193,4 +213,28 @@ func processRow(stationBytes []byte, temp float64, hashCode uint64, m []Entry, t
 			index = 0
 		}
 	}
+}
+
+func printOutput(m map[string]*Measurements) {
+	writer := bufio.NewWriter(os.Stdout)
+
+	fmt.Fprint(writer, "{")
+	for i, station := range slices.Sorted(maps.Keys(m)) {
+		measurements := m[station]
+
+		if i > 0 {
+			fmt.Fprint(writer, ", ")
+		}
+
+		fmt.Fprintf(
+			writer,
+			"%s=%.1f/%.1f/%.1f",
+			station,
+			measurements.min,
+			measurements.sum/float64(measurements.count),
+			measurements.max)
+
+	}
+	fmt.Fprint(writer, "}\n")
+	writer.Flush()
 }
