@@ -74,21 +74,51 @@ func main() {
 			leftover = leftover[:0]
 		}
 
-		begin := 0
+		beginLine := 0
+
 		semi := 0
+		hashCode := uint64(offset64)
+		sign := 1
+		temp := 0
+		parsingTemp := false
 		for i := 0; i < len(data); i++ {
-			switch data[i] {
-			case ';':
-				semi = i
+			b := data[i]
+
+			if !parsingTemp {
+				if b == ';' {
+					semi = i
+					parsingTemp = true
+					continue
+				}
+
+				hashCode ^= uint64(b)
+				hashCode *= prime64
+				continue
+			}
+
+			switch b {
+			case '-':
+				sign = -1
+			case '.':
+				// noop
 			case '\n':
-				processRow(data[begin:semi], data[semi+1:i], m, &totalStations)
-				begin = i + 1
+				tempFloat := float64(sign*temp) / 10.0
+				processRow(data[beginLine:semi], tempFloat, hashCode, m, &totalStations)
+
+				hashCode = offset64
+				temp = 0
+				sign = 1
+				parsingTemp = false
+
+				beginLine = i + 1
+			default:
+				temp = temp*10 + int(b-'0')
 			}
 		}
 
 		// incomplete line
-		if begin < len(data) {
-			leftover = append(leftover[:0], data[begin:]...)
+		if beginLine < len(data) {
+			leftover = append(leftover[:0], data[beginLine:]...)
 		}
 	}
 
@@ -125,27 +155,8 @@ func main() {
 	fmt.Printf("Took %v \n", elapsed)
 }
 
-func parseFloat(bytes []byte) float64 {
-	i := 0
-	sign := 1.
-	if bytes[i] == '-' {
-		sign = -1
-		i++
-	}
-	temp := 0.0
-	for ; bytes[i] != '.'; i++ {
-		temp = temp*10 + float64(bytes[i]-'0')
-	}
-	i++
-	decimal := float64(bytes[i] - '0')
-	temp += decimal / 10.0
-	return sign * temp
-}
-
-func processRow(stationBytes []byte, temperatureBytes []byte, m []Entry, totalStations *int) {
-	hashCode := HashBytes(stationBytes)
+func processRow(stationBytes []byte, temp float64, hashCode uint64, m []Entry, totalStations *int) {
 	index := int(hashCode % BUCKET_SIZE)
-	temp := parseFloat(temperatureBytes)
 	for {
 		entry := m[index]
 

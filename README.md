@@ -23,6 +23,7 @@
 | 5 (custom parseFloat) |  20.22ms   | 95.85ms |  622.61ms   | 6.01s      | 1m1.09s |
 | 6 (fewer allocs) |  13.30ms   | 72.70ms |  531.96ms   | 4.71s      | 46.71s |
 | 7 (no map) |  11.19ms   | 54.85ms |  343.34ms   | 3.11s      | 30.92s |
+| 8 (single pass) |  10.94ms   | 58.59ms |  337.77ms   | 3.10s      | 30.38s |
 
 ## Cpu Profile
 
@@ -129,4 +130,20 @@ flat  flat%   sum%        cum   cum%
 0.80s  2.96% 94.75%      0.80s  2.96%  runtime.memequal
 0.37s  1.37% 96.12%      0.67s  2.48%  runtime.scanObject
 0.22s  0.81% 96.93%      0.22s  0.81%  runtime.usleep
+```
+
+#### Iteration 8 (single pass hash and float parser)
+
+```
+flat  flat%   sum%        cum   cum%
+12.72s 46.53% 46.53%     23.42s 85.66%  main.main
+8.69s 31.78% 78.31%      8.69s 31.78%  syscall.rawsyscalln
+1.52s  5.56% 83.87%      1.52s  5.56%  runtime.pthread_cond_wait
+1.16s  4.24% 88.11%      1.93s  7.06%  main.processRow
+1.15s  4.21% 92.32%      1.15s  4.21%  runtime.pthread_cond_signal
+0.77s  2.82% 95.14%      0.77s  2.82%  runtime.memequal
+0.29s  1.06% 96.20%      0.61s  2.23%  runtime.scanObject
+0.23s  0.84% 97.04%      0.32s  1.17%  runtime.typePointers.next
+0.23s  0.84% 97.88%      0.23s  0.84%  runtime.usleep
+0.14s  0.51% 98.39%      0.14s  0.51%  runtime.pthread_kill
 ```
