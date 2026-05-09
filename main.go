@@ -133,15 +133,18 @@ func main() {
 		return string(sortedEntries[i].stationBytes) < string(sortedEntries[j].stationBytes)
 	})
 
-	fmt.Printf("{")
+	writer := bufio.NewWriter(os.Stdout)
+
+	fmt.Fprint(writer, "{")
 	for i, entry := range sortedEntries {
 		measurements := entry.measurements
 
 		if i > 0 {
-			fmt.Printf(", ")
+			fmt.Fprint(writer, ", ")
 		}
 
-		fmt.Printf(
+		fmt.Fprintf(
+			writer,
 			"%s=%.1f/%.1f/%.1f",
 			entry.stationBytes,
 			measurements.min,
@@ -149,7 +152,8 @@ func main() {
 			measurements.max)
 
 	}
-	fmt.Printf("}\n")
+	fmt.Fprint(writer, "}\n")
+	writer.Flush()
 
 	elapsed := time.Since(start)
 	fmt.Printf("Took %v \n", elapsed)
