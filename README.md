@@ -26,6 +26,7 @@
 | 8 (single pass) |  10.94ms   | 58.59ms |  337.77ms   | 3.10s      | 30.38s |
 | 9 (multithreading) |  20.77ms   | 39.37ms |  119.70ms   | 773.57ms      |  6.81s |
 | 10 (parseFloat optimized) |  18.94ms   | 40.13ms |  111.61ms   | 687.14ms      |  5.75s |
+| 11 (simplify and remove mod op) |  18.14ms   | 35.22ms |  90.43ms   | 597.45ms      |  5.10s |
 
 ## Cpu Profile
 
@@ -180,4 +181,20 @@ flat  flat%   sum%        cum   cum%
 610ms  1.90% 93.36%      610ms  1.90%  runtime.pthread_cond_wait
 450ms  1.40% 94.76%      450ms  1.40%  runtime.pthread_kill
 400ms  1.25% 96.01%      400ms  1.25%  runtime.memmove
+```
+
+#### Iteration 11 (remove leftover copy and mod op)
+
+```
+flat  flat%   sum%        cum   cum%
+14.58s 53.33% 53.33%     26.58s 97.22%  main.processChunk
+5.01s 18.32% 71.65%      5.04s 18.43%  main.parseTemperature
+3.65s 13.35% 85.00%      5.18s 18.95%  main.processRow
+1.72s  6.29% 91.29%      1.72s  6.29%  syscall.rawsyscalln
+1.49s  5.45% 96.74%      1.49s  5.45%  runtime.memequal
+0.44s  1.61% 98.35%      0.44s  1.61%  runtime.pthread_cond_wait
+0.16s  0.59% 98.94%      0.16s  0.59%  runtime.pthread_cond_signal
+0.03s  0.11% 99.05%      1.52s  5.56%  bytes.Equal (inline)
+0.01s 0.037% 99.09%      0.55s  2.01%  runtime.findRunnable
+0.01s 0.037% 99.12%      0.50s  1.83%  runtime.goschedImpl
 ```

@@ -13,7 +13,8 @@ import (
 	"time"
 )
 
-const BUCKET_SIZE = 250000
+const BUCKET_SIZE = 1 << 18
+const BUCKET_MASK = BUCKET_SIZE - 1
 
 type Entry struct {
 	stationBytes []byte
@@ -175,7 +176,7 @@ func parseTemperature(data []byte) (float64, int) {
 }
 
 func processRow(stationBytes []byte, temp float64, hashCode uint64, m []Entry, totalStations *int) {
-	index := int(hashCode % BUCKET_SIZE)
+	index := int(hashCode & BUCKET_MASK)
 	for {
 		entry := m[index]
 
