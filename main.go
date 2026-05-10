@@ -96,7 +96,6 @@ func processChunk(input string, chunk Chunk, resultsChannel chan []Entry) {
 	end := chunk.end
 
 	buffer := make([]byte, bufferSize)
-	var leftover []byte
 
 	for offset < end {
 		n, _ := file.ReadAt(buffer, offset)
@@ -106,14 +105,8 @@ func processChunk(input string, chunk Chunk, resultsChannel chan []Entry) {
 		}
 
 		data := buffer[:n]
-
-		if len(leftover) > 0 {
-			tmp := make([]byte, len(leftover)+len(data))
-			copy(tmp, leftover)
-			copy(tmp[len(leftover):], data)
-			data = tmp
-			leftover = leftover[:0]
-		}
+		lastNewLineByte := bytes.LastIndexByte(data, '\n')
+		data = data[:lastNewLineByte+1]
 
 		beginLine := 0
 
@@ -131,11 +124,7 @@ func processChunk(input string, chunk Chunk, resultsChannel chan []Entry) {
 
 			semi = i
 
-			if i+7 > len(data) { // incomplete temperature
-				break
-			}
-
-			tempFloat, endLine := parseTemperature(data[semi+1 : semi+7])
+			tempFloat, endLine := parseTemperature(data[semi+1:])
 			endLine += semi + 1
 
 			processRow(data[beginLine:semi], tempFloat, hashCode, m, &totalStations)
@@ -145,12 +134,7 @@ func processChunk(input string, chunk Chunk, resultsChannel chan []Entry) {
 			i = endLine
 		}
 
-		// incomplete line
-		if beginLine < len(data) {
-			leftover = append(leftover[:0], data[beginLine:]...)
-		}
-
-		offset += int64(n)
+		offset += int64(lastNewLineByte + 1)
 	}
 
 	// emit worker results
