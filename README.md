@@ -25,6 +25,7 @@
 | 7 (no map) |  11.19ms   | 54.85ms |  343.34ms   | 3.11s      | 30.92s |
 | 8 (single pass) |  10.94ms   | 58.59ms |  337.77ms   | 3.10s      | 30.38s |
 | 9 (multithreading) |  20.77ms   | 39.37ms |  119.70ms   | 773.57ms      |  6.81s |
+| 10 (parseFloat optimized) |  18.94ms   | 40.13ms |  111.61ms   | 687.14ms      |  5.75s |
 
 ## Cpu Profile
 
@@ -149,7 +150,7 @@ flat  flat%   sum%        cum   cum%
 0.14s  0.51% 98.39%      0.14s  0.51%  runtime.pthread_kill
 ```
 
-#### Iteration 8 (multithreading)
+#### Iteration 9 (multithreading)
 
 ```
 flat  flat%   sum%        cum   cum%
@@ -163,4 +164,20 @@ flat  flat%   sum%        cum   cum%
 0.39s  1.01% 95.62%      0.58s  1.50%  runtime.typePointers.next
 0.30s  0.78% 96.40%      0.30s  0.78%  runtime.pthread_cond_signal
 0.30s  0.78% 97.17%      0.30s  0.78%  runtime.pthread_kill
+```
+
+#### Iteration 10 (parserFloat optimized)
+
+```
+flat  flat%   sum%        cum   cum%
+15440ms 48.16% 48.16%    28760ms 89.71%  main.processChunk
+4800ms 14.97% 63.13%     4850ms 15.13%  main.parseTemperature
+4730ms 14.75% 77.89%     6220ms 19.40%  main.processRow
+1620ms  5.05% 82.94%     1620ms  5.05%  syscall.rawsyscalln
+1470ms  4.59% 87.52%     1470ms  4.59%  runtime.memequal
+630ms  1.97% 89.49%     1180ms  3.68%  runtime.scanObject
+630ms  1.97% 91.45%      630ms  1.97%  runtime.usleep
+610ms  1.90% 93.36%      610ms  1.90%  runtime.pthread_cond_wait
+450ms  1.40% 94.76%      450ms  1.40%  runtime.pthread_kill
+400ms  1.25% 96.01%      400ms  1.25%  runtime.memmove
 ```

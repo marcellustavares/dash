@@ -74,9 +74,6 @@ func main() {
 		}
 	}
 
-	// sortedKeys := slices.Sorted(maps.Keys(m))
-	// sortedEntries := sortEntries(m)
-
 	printOutput(m)
 
 	elapsed := time.Since(start)
@@ -122,42 +119,30 @@ func processChunk(input string, chunk Chunk, resultsChannel chan []Entry) {
 
 		semi := 0
 		hashCode := uint64(offset64)
-		sign := 1
-		temp := 0
-		parsingTemp := false
+
 		for i := 0; i < len(data); i++ {
 			b := data[i]
 
-			if !parsingTemp {
-				if b == ';' {
-					semi = i
-					parsingTemp = true
-					continue
-				}
-
+			if b != ';' {
 				hashCode ^= uint64(b)
 				hashCode *= prime64
 				continue
 			}
 
-			switch b {
-			case '-':
-				sign = -1
-			case '.':
-				// noop
-			case '\n':
-				tempFloat := float64(sign*temp) / 10.0
-				processRow(data[beginLine:semi], tempFloat, hashCode, m, &totalStations)
+			semi = i
 
-				hashCode = offset64
-				temp = 0
-				sign = 1
-				parsingTemp = false
-
-				beginLine = i + 1
-			default:
-				temp = temp*10 + int(b-'0')
+			if i+7 > len(data) { // incomplete temperature
+				break
 			}
+
+			tempFloat, endLine := parseTemperature(data[semi+1 : semi+7])
+			endLine += semi + 1
+
+			processRow(data[beginLine:semi], tempFloat, hashCode, m, &totalStations)
+
+			hashCode = uint64(offset64)
+			beginLine = endLine + 1
+			i = endLine
 		}
 
 		// incomplete line
@@ -179,6 +164,32 @@ func processChunk(input string, chunk Chunk, resultsChannel chan []Entry) {
 	resultsChannel <- results
 }
 
+func parseTemperature(data []byte) (float64, int) {
+	i := 0
+	negative := false
+
+	if data[i] == '-' {
+		negative = true
+		i++
+	}
+
+	var temp int32
+	if data[i+1] == '.' {
+		// "X.X\n"
+		temp = int32(data[i]-'0')*10 + int32(data[i+2]-'0')
+		i += 3
+	} else {
+		// "X.X\n"
+		temp = int32(data[i]-'0')*100 + int32(data[i+1]-'0')*10 + int32(data[i+3]-'0')
+		i += 4
+	}
+	if negative {
+		temp = -temp
+	}
+
+	return float64(temp) / 10.0, i //i points to new line byte
+}
+
 func processRow(stationBytes []byte, temp float64, hashCode uint64, m []Entry, totalStations *int) {
 	index := int(hashCode % BUCKET_SIZE)
 	for {
@@ -192,7 +203,6 @@ func processRow(stationBytes []byte, temp float64, hashCode uint64, m []Entry, t
 				stationBytes: stationCopy,
 				measurements: &Measurements{temp, temp, temp, 1},
 			}
-			//fmt.Println(string(stationBytes))
 			(*totalStations)++
 			break
 		}
